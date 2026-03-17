@@ -13,8 +13,8 @@
     "boto3>=1.26.0",
     "python-jose>=3.3.0"
   ],
-  "documentation": "https://github.com/regaw-leinad/winix-purifiers",
-  "issue_tracker": "https://github.com/regaw-leinad/winix-purifiers/issues",
+  "documentation": "https://github.com/regaw-leinad/homeassistant-winix-purifiers",
+  "issue_tracker": "https://github.com/regaw-leinad/homeassistant-winix-purifiers/issues",
   "loggers": [
     "winix_purifiers"
   ]

@@ -1,7 +1,7 @@
 # Winix Air Purifiers
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange?style=for-the-badge)](https://hacs.xyz)
-[![GitHub Release](https://img.shields.io/github/v/release/regaw-leinad/winix-purifiers?style=for-the-badge)](https://github.com/regaw-leinad/winix-purifiers/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/regaw-leinad/homeassistant-winix-purifiers?style=for-the-badge)](https://github.com/regaw-leinad/homeassistant-winix-purifiers/releases)
 
 [Home Assistant](https://www.home-assistant.io) custom integration for [Winix](https://www.winixamerica.com) air purifiers.
 
@@ -38,7 +38,7 @@ Other models may work but are not officially tested. The integration detects ava
 1. Open HACS in Home Assistant.
 2. Go to **Integrations** and click the three dots menu in the top right.
 3. Select **Custom repositories**.
-4. Add `https://github.com/regaw-leinad/winix-purifiers` with category **Integration**.
+4. Add `https://github.com/regaw-leinad/homeassistant-winix-purifiers` with category **Integration**.
 5. Search for "Winix Air Purifiers" and install it.
 6. Restart Home Assistant.
 
