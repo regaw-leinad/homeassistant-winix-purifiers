@@ -17,7 +17,7 @@ from .api import (
     WinixDeviceClient,
 )
 from .config_flow import CONF_REFRESH_TOKEN, CONF_USER_ID
-from .const import DOMAIN, LOGGER
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, LOGGER
 from .coordinator import WinixDeviceCoordinator, WinixDeviceData
 
 PLATFORMS = [
@@ -96,7 +96,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             client=client,
         )
 
-        coordinator = WinixDeviceCoordinator(hass, device_data)
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        coordinator = WinixDeviceCoordinator(hass, device_data, scan_interval)
         await coordinator.async_config_entry_first_refresh()
         coordinators[device.device_id] = coordinator
 

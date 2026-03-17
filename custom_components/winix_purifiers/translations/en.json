@@ -27,6 +27,16 @@
       "reauth_successful": "Re-authentication was successful"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Poll interval (seconds)",
+          "filter_replacement_threshold": "Filter replacement alert threshold (%)"
+        }
+      }
+    }
+  },
   "entity": {
     "switch": {
       "plasmawave": {

@@ -9,7 +9,11 @@ from .api import Airflow
 DOMAIN = "winix_purifiers"
 LOGGER = logging.getLogger(__package__)
 
+CONF_SCAN_INTERVAL = "scan_interval"
+CONF_FILTER_REPLACEMENT_THRESHOLD = "filter_replacement_threshold"
+
 DEFAULT_SCAN_INTERVAL = 30  # seconds
+MIN_SCAN_INTERVAL = 15  # seconds
 
 # Fan speed mapping (4 manual speeds, Sleep is a preset)
 ORDERED_AIRFLOW_SPEEDS = [Airflow.LOW, Airflow.MEDIUM, Airflow.HIGH, Airflow.TURBO]

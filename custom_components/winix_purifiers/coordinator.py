@@ -44,13 +44,14 @@ class WinixDeviceCoordinator(DataUpdateCoordinator[WinixDeviceData]):
         self,
         hass: HomeAssistant,
         device_data: WinixDeviceData,
+        scan_interval: int = DEFAULT_SCAN_INTERVAL,
     ) -> None:
         name = device_data.info.device_alias
         super().__init__(
             hass,
             _LOGGER,
             name=f"{DOMAIN}_{name}",
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            update_interval=timedelta(seconds=scan_interval),
         )
         self._device_data = device_data
 
