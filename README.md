@@ -47,6 +47,8 @@ Known models and their features:
 
 All models also support: power, mode (auto/manual), fan speed, AQI, and filter life tracking.
 
+Additional models (T800, WXAP800, ZERO 360, ZERO+, and others) are also supported. All features are detected automatically from the device, so even models not listed here should work.
+
 Some models also report ambient light, PM2.5 density, filter door status, and filter presence detection. These sensors are automatically created when the device reports them.
 
 ## Installation
