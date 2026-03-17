@@ -47,6 +47,7 @@ class TestEnums:
         assert Attribute.PLASMAWAVE == "A07"
         assert Attribute.FILTER_HOURS == "A21"
         assert Attribute.AIR_QUALITY == "S07"
+        assert Attribute.AIR_QVALUE == "S08"
         assert Attribute.AMBIENT_LIGHT == "S14"
         assert Attribute.PM25 == "S04"
         assert Attribute.TIMER == "A15"
@@ -87,9 +88,10 @@ class TestDeviceStatus:
 
 
 class TestModelCapabilities:
-    """Test per-model capability detection."""
+    """Test attribute-based capability detection."""
 
-    def test_c545_basic(self):
+    def test_c545(self):
+        """C545: plasmawave, ambient light, no brightness/child lock/pm25/timer."""
         caps = ModelCapabilities(
             model_name="C545",
             available_attributes={
@@ -102,14 +104,15 @@ class TestModelCapabilities:
                 Attribute.AMBIENT_LIGHT,
             },
         )
-        assert not caps.has_brightness
-        assert not caps.has_child_lock  # no A08 in attributes
+        assert caps.has_plasmawave
         assert caps.has_ambient_light
+        assert not caps.has_brightness
+        assert not caps.has_child_lock
         assert not caps.has_pm25
         assert not caps.has_timer
-        assert not caps.has_four_level_aqi
 
-    def test_c610_extended(self):
+    def test_c610(self):
+        """C610: plasmawave, brightness, child lock."""
         caps = ModelCapabilities(
             model_name="C610",
             available_attributes={
@@ -118,13 +121,16 @@ class TestModelCapabilities:
                 Attribute.AIRFLOW,
                 Attribute.PLASMAWAVE,
                 Attribute.CHILD_LOCK,
+                Attribute.BRIGHTNESS,
             },
         )
+        assert caps.has_plasmawave
         assert caps.has_brightness
         assert caps.has_child_lock
         assert not caps.has_pm25
 
     def test_tower_xq(self):
+        """Tower XQ: plasmawave, child lock, timer, PM2.5."""
         caps = ModelCapabilities(
             model_name="TOWERXQ_WA",
             available_attributes={
@@ -137,11 +143,30 @@ class TestModelCapabilities:
                 Attribute.CHILD_LOCK,
             },
         )
+        assert caps.has_plasmawave
         assert caps.has_pm25
         assert caps.has_timer
         assert caps.has_child_lock
-        assert caps.has_four_level_aqi
         assert not caps.has_ambient_light
+        assert not caps.has_brightness
+
+    def test_master_no_plasmawave(self):
+        """MASTER(S): no plasmawave, has child lock and timer."""
+        caps = ModelCapabilities(
+            model_name="MASTER(S)",
+            available_attributes={
+                Attribute.POWER,
+                Attribute.MODE,
+                Attribute.AIRFLOW,
+                Attribute.AQI,
+                Attribute.CHILD_LOCK,
+                Attribute.TIMER,
+                Attribute.FILTER_HOURS,
+            },
+        )
+        assert not caps.has_plasmawave
+        assert caps.has_child_lock
+        assert caps.has_timer
         assert not caps.has_brightness
 
     def test_unknown_model_detects_from_attributes(self):
@@ -152,5 +177,6 @@ class TestModelCapabilities:
         )
         assert caps.has_pm25
         assert caps.has_ambient_light
+        assert not caps.has_plasmawave
         assert not caps.has_brightness
         assert not caps.has_timer

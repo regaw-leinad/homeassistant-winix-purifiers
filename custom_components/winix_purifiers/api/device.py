@@ -15,6 +15,10 @@ class Attribute(StrEnum):
     AQI = "A05"
     PLASMAWAVE = "A07"
     CHILD_LOCK = "A08"
+    POLLUTION_LAMP = "A09"
+    UV = "A10"
+    FILTER_DOOR = "A11"
+    FILTER_DETECT = "A12"
     TIMER = "A15"
     BRIGHTNESS = "A16"
     FILTER_HOURS = "A21"
@@ -71,6 +75,10 @@ class DeviceStatus:
     timer: int | None = None
     child_lock: str | None = None
     brightness: str | None = None
+    pollution_lamp: str | None = None
+    uv: str | None = None
+    filter_door: str | None = None
+    filter_detect: str | None = None
 
 
 @dataclass
@@ -98,19 +106,16 @@ class ModelCapabilities:
     available_attributes: set[str] = field(default_factory=set)
 
     @property
-    def _model_lower(self) -> str:
-        return self.model_name.lower()
+    def has_plasmawave(self) -> bool:
+        return Attribute.PLASMAWAVE in self.available_attributes
 
     @property
     def has_brightness(self) -> bool:
-        return self._model_lower.startswith("c610")
+        return Attribute.BRIGHTNESS in self.available_attributes
 
     @property
     def has_child_lock(self) -> bool:
-        return (
-            self._model_lower.startswith("c610")
-            or Attribute.CHILD_LOCK in self.available_attributes
-        )
+        return Attribute.CHILD_LOCK in self.available_attributes
 
     @property
     def has_ambient_light(self) -> bool:
@@ -125,6 +130,17 @@ class ModelCapabilities:
         return Attribute.TIMER in self.available_attributes
 
     @property
-    def has_four_level_aqi(self) -> bool:
-        """Tower XQ and similar models have 4 AQI levels instead of 3."""
-        return "towerxq" in self._model_lower
+    def has_pollution_lamp(self) -> bool:
+        return Attribute.POLLUTION_LAMP in self.available_attributes
+
+    @property
+    def has_uv(self) -> bool:
+        return Attribute.UV in self.available_attributes
+
+    @property
+    def has_filter_door(self) -> bool:
+        return Attribute.FILTER_DOOR in self.available_attributes
+
+    @property
+    def has_filter_detect(self) -> bool:
+        return Attribute.FILTER_DETECT in self.available_attributes

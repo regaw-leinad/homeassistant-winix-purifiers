@@ -44,6 +44,12 @@
       },
       "child_lock": {
         "name": "Child lock"
+      },
+      "pollution_lamp": {
+        "name": "Pollution lamp"
+      },
+      "uv": {
+        "name": "UV sterilization"
       }
     },
     "sensor": {
@@ -63,6 +69,12 @@
     "binary_sensor": {
       "filter_replacement": {
         "name": "Filter replacement"
+      },
+      "filter_door": {
+        "name": "Filter door"
+      },
+      "filter_detect": {
+        "name": "Filter missing"
       }
     },
     "select": {

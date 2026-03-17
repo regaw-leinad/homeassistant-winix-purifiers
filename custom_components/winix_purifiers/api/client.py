@@ -57,6 +57,10 @@ class WinixDeviceClient:
             timer=self._parse_int_optional(attrs.get(Attribute.TIMER)),
             child_lock=attrs.get(Attribute.CHILD_LOCK),
             brightness=attrs.get(Attribute.BRIGHTNESS),
+            pollution_lamp=attrs.get(Attribute.POLLUTION_LAMP),
+            uv=attrs.get(Attribute.UV),
+            filter_door=attrs.get(Attribute.FILTER_DOOR),
+            filter_detect=attrs.get(Attribute.FILTER_DETECT),
         )
 
     async def get_raw_attributes(self) -> dict[str, str]:
@@ -94,9 +98,19 @@ class WinixDeviceClient:
         await self._set_attribute(Attribute.CHILD_LOCK, value)
 
     async def set_timer(self, value: str) -> None:
-        """Set power-off timer (Tower XQ)."""
+        """Set power-off timer."""
         _LOGGER.debug("client:set_timer(%s) device=%s", value, self._device_id)
         await self._set_attribute(Attribute.TIMER, value)
+
+    async def set_pollution_lamp(self, value: str) -> None:
+        """Set pollution lamp (AQI indicator LED)."""
+        _LOGGER.debug("client:set_pollution_lamp(%s) device=%s", value, self._device_id)
+        await self._set_attribute(Attribute.POLLUTION_LAMP, value)
+
+    async def set_uv(self, value: str) -> None:
+        """Set UV sterilization."""
+        _LOGGER.debug("client:set_uv(%s) device=%s", value, self._device_id)
+        await self._set_attribute(Attribute.UV, value)
 
     async def _get_status_attributes(self) -> dict[str, str]:
         """Fetch raw status attributes from the device API."""
