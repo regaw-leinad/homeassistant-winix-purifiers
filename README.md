@@ -47,6 +47,8 @@ Known models and their features:
 
 All models also support: power, mode (auto/manual), fan speed, AQI, and filter life tracking.
 
+Some models also report ambient light, PM2.5 density, filter door status, and filter presence detection. These sensors are automatically created when the device reports them.
+
 ## Installation
 
 ### HACS (Recommended)
