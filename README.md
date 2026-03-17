@@ -25,25 +25,25 @@ This integration supports Winix air purifiers. Features are automatically detect
 
 Known models and their features:
 
-| Model | PlasmaWave | Brightness | Child Lock | Timer | Pollution Lamp | UV |
-|-------|------------|------------|------------|-------|----------------|----|
-| C545 | Yes | - | - | - | - | - |
-| C610 | Yes | Yes | Yes | - | - | - |
-| C909 | Yes | - | - | - | - | - |
-| 5510 / 5520 | Yes | - | - | - | - | - |
-| 9800 | Yes | - | - | - | - | - |
-| AM90 | Yes | - | - | - | - | - |
-| T500 | Yes | - | - | - | - | - |
-| T810 / T830 | Yes | Yes | - | - | - | - |
-| T1000 | - | - | Yes | - | - | - |
-| Tower XQ / XQ PRO | Yes | - | Yes | Yes | Yes | - |
-| HR1000 | Yes | - | Yes | Yes | Yes | - |
-| NK105 | Yes | - | - | - | Yes | - |
-| T1 | Yes | - | - | Yes | - | - |
-| ZERO+ | Yes | - | Yes | Yes | - | - |
-| TITAN | Yes | - | - | Yes | - | - |
-| XLC | Yes | - | - | - | - | - |
-| MASTER(S) | - | - | Yes | Yes | - | - |
+| Model | PlasmaWave | Brightness | Child Lock | Timer | Pollution Lamp |
+|-------|------------|------------|------------|-------|----------------|
+| C545 | Yes | - | - | - | - |
+| C610 | Yes | Yes | Yes | - | - |
+| C909 | Yes | - | - | - | - |
+| 5510 / 5520 | Yes | - | - | - | - |
+| 9800 | Yes | - | - | - | - |
+| AM90 | Yes | - | - | - | - |
+| T500 | Yes | - | - | - | - |
+| T810 / T830 | Yes | Yes | - | - | - |
+| T1000 | - | - | Yes | - | - |
+| Tower XQ / XQ PRO | Yes | - | Yes | Yes | Yes |
+| HR1000 | Yes | - | Yes | Yes | Yes |
+| NK105 | Yes | - | - | - | Yes |
+| T1 | Yes | - | - | Yes | - |
+| ZERO+ | Yes | - | Yes | Yes | - |
+| TITAN | Yes | - | - | Yes | - |
+| XLC | Yes | - | - | - | - |
+| MASTER(S) | - | - | Yes | Yes | - |
 
 All models also support: power, mode (auto/manual), fan speed, AQI, and filter life tracking.
 
