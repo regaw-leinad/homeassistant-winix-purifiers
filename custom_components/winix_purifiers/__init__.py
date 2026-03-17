@@ -8,10 +8,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import RefreshTokenExpiredError, WinixAccount, WinixApiError, WinixDeviceClient
+from .api import (
+    DeviceStatus,
+    ModelCapabilities,
+    RefreshTokenExpiredError,
+    WinixAccount,
+    WinixApiError,
+    WinixDeviceClient,
+)
 from .config_flow import CONF_REFRESH_TOKEN, CONF_USER_ID
 from .const import DOMAIN, LOGGER
-from .coordinator import WinixPurifiersCoordinator
+from .coordinator import WinixDeviceCoordinator, WinixDeviceData
 
 PLATFORMS = [
     Platform.FAN,
@@ -43,21 +50,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not devices:
         LOGGER.warning("init:async_setup_entry() no devices found for %s", username)
 
-    # Create a client for each device and do an initial status fetch
-    # to detect model capabilities from available attributes
-    clients: dict[str, WinixDeviceClient] = {}
-    for device in devices:
-        client = WinixDeviceClient(session, device.device_id)
-        clients[device.device_id] = client
-
-        try:
-            device.raw_attributes = await client.get_raw_attributes()
-        except Exception:
-            LOGGER.debug(
-                "init:async_setup_entry() failed initial status fetch for %s",
-                device.device_id,
-            )
-
     # Persist updated tokens
     new_auth = account.auth
     hass.config_entries.async_update_entry(
@@ -69,10 +61,46 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         },
     )
 
-    coordinator = WinixPurifiersCoordinator(hass, account, devices, clients)
-    await coordinator.async_config_entry_first_refresh()
+    # Create a per-device coordinator for each device
+    coordinators: dict[str, WinixDeviceCoordinator] = {}
+    for device in devices:
+        client = WinixDeviceClient(session, device.device_id)
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+        # Initial status fetch to detect model capabilities
+        raw_attributes: dict[str, str] = {}
+        try:
+            raw_attributes = await client.get_raw_attributes()
+        except Exception:
+            LOGGER.debug(
+                "init:async_setup_entry() failed initial status for %s",
+                device.device_alias,
+            )
+
+        device.raw_attributes = raw_attributes
+        capabilities = ModelCapabilities(
+            model_name=device.model_name,
+            available_attributes=set(raw_attributes.keys()),
+        )
+
+        device_data = WinixDeviceData(
+            info=device,
+            status=DeviceStatus(
+                power="0",
+                mode="01",
+                airflow="01",
+                air_quality="01",
+                plasmawave="0",
+                filter_hours=0,
+            ),
+            capabilities=capabilities,
+            client=client,
+        )
+
+        coordinator = WinixDeviceCoordinator(hass, device_data)
+        await coordinator.async_config_entry_first_refresh()
+        coordinators[device.device_id] = coordinator
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinators
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -94,7 +122,6 @@ async def _create_account(
     user_id: str,
 ) -> WinixAccount:
     """Create a WinixAccount, trying refresh token first then full login."""
-    # Try refresh token if we have one
     if refresh_token and user_id:
         try:
             return await WinixAccount.from_existing_auth(
@@ -109,7 +136,6 @@ async def _create_account(
         except Exception:
             LOGGER.debug("init:_create_account() refresh failed, trying full login")
 
-    # Fall back to full login
     try:
         return await WinixAccount.from_credentials(
             session,

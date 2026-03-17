@@ -1,11 +1,10 @@
-"""Data coordinator for Winix Purifiers."""
+"""Per-device data coordinator for Winix Purifiers."""
 
 from __future__ import annotations
 
 import logging
-import math
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
@@ -16,11 +15,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .api import (
     DeviceStatus,
     ModelCapabilities,
-    WinixAccount,
     WinixDevice,
     WinixDeviceClient,
 )
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_BACKOFF_SECONDS, UNREACHABLE_THRESHOLD
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, UNREACHABLE_THRESHOLD
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,106 +33,62 @@ class WinixDeviceData:
     client: WinixDeviceClient
     consecutive_failures: int = 0
     has_received_data: bool = False
-    _backoff_seconds: float = field(default=0, repr=False)
 
 
-class WinixPurifiersCoordinator(DataUpdateCoordinator[dict[str, WinixDeviceData]]):
-    """Coordinator that polls all Winix devices on an account."""
+class WinixDeviceCoordinator(DataUpdateCoordinator[WinixDeviceData]):
+    """Coordinator that polls a single Winix device independently."""
 
     config_entry: ConfigEntry
 
     def __init__(
         self,
         hass: HomeAssistant,
-        account: WinixAccount,
-        devices: list[WinixDevice],
-        clients: dict[str, WinixDeviceClient],
+        device_data: WinixDeviceData,
     ) -> None:
+        name = device_data.info.device_alias
         super().__init__(
             hass,
             _LOGGER,
-            name=DOMAIN,
+            name=f"{DOMAIN}_{name}",
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
         )
-        self._account = account
-        self._device_data: dict[str, WinixDeviceData] = {}
-
-        for device in devices:
-            caps = ModelCapabilities(
-                model_name=device.model_name,
-                available_attributes=set(device.raw_attributes.keys()),
-            )
-            # Build initial status from raw_attributes if available
-            client = clients[device.device_id]
-            self._device_data[device.device_id] = WinixDeviceData(
-                info=device,
-                status=DeviceStatus(
-                    power="0",
-                    mode="01",
-                    airflow="01",
-                    air_quality="01",
-                    plasmawave="0",
-                    filter_hours=0,
-                ),
-                capabilities=caps,
-                client=client,
-            )
+        self._device_data = device_data
 
     @property
-    def account(self) -> WinixAccount:
-        return self._account
+    def device_id(self) -> str:
+        return self._device_data.info.device_id
 
-    def get_device_ids(self) -> list[str]:
-        return list(self._device_data.keys())
-
-    def get_device_data(self, device_id: str) -> WinixDeviceData:
-        return self._device_data[device_id]
-
-    async def _async_update_data(self) -> dict[str, WinixDeviceData]:
-        """Poll all devices for current status."""
-        for device_id, device_data in self._device_data.items():
-            await self._poll_device(device_id, device_data)
-
-        return self._device_data
-
-    async def _poll_device(self, device_id: str, device_data: WinixDeviceData) -> None:
-        """Poll a single device, with per-device failure tracking."""
-        name = device_data.info.device_alias
+    async def _async_update_data(self) -> WinixDeviceData:
+        """Poll this device for current status."""
+        data = self._device_data
+        name = data.info.device_alias
 
         try:
-            status = await device_data.client.get_status()
-            device_data.status = status
-            device_data.has_received_data = True
-            device_data.consecutive_failures = 0
-            device_data._backoff_seconds = 0
+            data.status = await data.client.get_status()
+            data.has_received_data = True
+            data.consecutive_failures = 0
             _LOGGER.debug("coordinator:poll(%s) success", name)
         except Exception as err:
-            device_data.consecutive_failures += 1
-            device_data._backoff_seconds = min(
-                DEFAULT_SCAN_INTERVAL * math.pow(2, device_data.consecutive_failures),
-                MAX_BACKOFF_SECONDS,
-            )
-            # Only log on first failure and when marking unreachable
-            if device_data.consecutive_failures == 1:
+            data.consecutive_failures += 1
+            if data.consecutive_failures == 1:
                 _LOGGER.debug("coordinator:poll(%s) device unavailable: %s", name, err)
-            elif device_data.consecutive_failures == UNREACHABLE_THRESHOLD:
+            elif data.consecutive_failures == UNREACHABLE_THRESHOLD:
                 _LOGGER.debug(
                     "coordinator:poll(%s) marking as unreachable after %d failures",
                     name,
-                    device_data.consecutive_failures,
+                    data.consecutive_failures,
                 )
+
+        return data
 
     async def async_send_command(
         self,
-        device_id: str,
         command: Callable[[], Coroutine[Any, Any, None]],
         optimistic_update: Callable[[DeviceStatus], None] | None = None,
     ) -> None:
-        """Send a command to a device with optimistic state update."""
-        # Apply optimistic update before the API call
+        """Send a command to this device with optimistic state update."""
         if optimistic_update:
-            device_data = self._device_data[device_id]
-            optimistic_update(device_data.status)
+            optimistic_update(self._device_data.status)
             self.async_set_updated_data(self._device_data)
 
         await command()

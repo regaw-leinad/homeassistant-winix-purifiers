@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.redact import async_redact_data
 
 from .const import DOMAIN
-from .coordinator import WinixPurifiersCoordinator
+from .coordinator import WinixDeviceCoordinator
 
 REDACT_KEYS = {
     "username",
@@ -25,10 +25,11 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    coordinator: WinixPurifiersCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinators: dict[str, WinixDeviceCoordinator] = hass.data[DOMAIN][entry.entry_id]
 
     devices_data = {}
-    for device_id, device_data in coordinator.data.items():
+    for device_id, coordinator in coordinators.items():
+        device_data = coordinator.data
         devices_data[device_id] = {
             "model": device_data.info.model_name,
             "alias": device_data.info.device_alias,

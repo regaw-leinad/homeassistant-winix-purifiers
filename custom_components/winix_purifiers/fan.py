@@ -23,7 +23,7 @@ from .const import (
     PRESET_MODES,
     PRESET_SLEEP,
 )
-from .coordinator import WinixPurifiersCoordinator
+from .coordinator import WinixDeviceCoordinator
 from .entity import WinixEntity
 
 
@@ -33,10 +33,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Winix fan entities."""
-    coordinator: WinixPurifiersCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        WinixFan(coordinator, device_id) for device_id in coordinator.get_device_ids()
-    )
+    coordinators: dict[str, WinixDeviceCoordinator] = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities(WinixFan(coordinator) for coordinator in coordinators.values())
 
 
 class WinixFan(WinixEntity, FanEntity):
@@ -53,11 +51,10 @@ class WinixFan(WinixEntity, FanEntity):
 
     def __init__(
         self,
-        coordinator: WinixPurifiersCoordinator,
-        device_id: str,
+        coordinator: WinixDeviceCoordinator,
     ) -> None:
-        super().__init__(coordinator, device_id)
-        self._attr_unique_id = f"{DOMAIN}_{self._device_data.info.mac.lower()}"
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{DOMAIN}_{self.device_data.info.mac.lower()}"
 
     @property
     def name(self) -> str | None:
@@ -66,11 +63,11 @@ class WinixFan(WinixEntity, FanEntity):
 
     @property
     def is_on(self) -> bool:
-        return self._device_data.status.power == Power.ON
+        return self.device_data.status.power == Power.ON
 
     @property
     def percentage(self) -> int | None:
-        status = self._device_data.status
+        status = self.device_data.status
 
         if status.power == Power.OFF:
             return 0
@@ -88,7 +85,7 @@ class WinixFan(WinixEntity, FanEntity):
 
     @property
     def preset_mode(self) -> str | None:
-        status = self._device_data.status
+        status = self.device_data.status
 
         if status.power == Power.OFF:
             return None
@@ -116,10 +113,9 @@ class WinixFan(WinixEntity, FanEntity):
             await self.async_set_percentage(percentage)
             return
 
-        client = self._device_data.client
+        client = self.device_data.client
 
         await self.coordinator.async_send_command(
-            self._device_id,
             lambda: client.set_power(Power.ON),
             optimistic_update=lambda s: _apply_power_on(s),
         )
@@ -127,10 +123,9 @@ class WinixFan(WinixEntity, FanEntity):
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off the purifier."""
         LOGGER.debug("fan:async_turn_off()")
-        client = self._device_data.client
+        client = self.device_data.client
 
         await self.coordinator.async_send_command(
-            self._device_id,
             lambda: client.set_power(Power.OFF),
             optimistic_update=lambda s: _apply_power_off(s),
         )
@@ -149,20 +144,18 @@ class WinixFan(WinixEntity, FanEntity):
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set a preset mode (Auto or Sleep)."""
         LOGGER.debug("fan:async_set_preset_mode(%s)", preset_mode)
-        client = self._device_data.client
-        status = self._device_data.status
+        client = self.device_data.client
+        status = self.device_data.status
 
         # Ensure device is on first
         if status.power == Power.OFF:
             await self.coordinator.async_send_command(
-                self._device_id,
                 lambda: client.set_power(Power.ON),
                 optimistic_update=lambda s: _apply_power_on(s),
             )
 
         if preset_mode == PRESET_AUTO:
             await self.coordinator.async_send_command(
-                self._device_id,
                 lambda: client.set_mode(Mode.AUTO),
                 optimistic_update=lambda s: _apply_auto(s),
             )
@@ -172,22 +165,20 @@ class WinixFan(WinixEntity, FanEntity):
             # Sleep requires manual mode + sleep airflow with a delay between
             if status.mode != Mode.MANUAL:
                 await self.coordinator.async_send_command(
-                    self._device_id,
                     lambda: client.set_mode(Mode.MANUAL),
                     optimistic_update=lambda s: setattr(s, "mode", Mode.MANUAL),
                 )
                 await asyncio.sleep(COMMAND_DELAY_SECONDS)
 
             await self.coordinator.async_send_command(
-                self._device_id,
                 lambda: client.set_airflow(Airflow.SLEEP),
                 optimistic_update=lambda s: _apply_sleep(s),
             )
 
     async def _set_airflow(self, airflow: Airflow) -> None:
         """Set airflow speed, auto-switching to manual mode if needed."""
-        client = self._device_data.client
-        status = self._device_data.status
+        client = self.device_data.client
+        status = self.device_data.status
 
         # Optimistically set the final desired state immediately so the UI
         # doesn't flash intermediate values during the command sequence
@@ -199,7 +190,6 @@ class WinixFan(WinixEntity, FanEntity):
         # Ensure device is on
         if status.power == Power.OFF:
             await self.coordinator.async_send_command(
-                self._device_id,
                 lambda: client.set_power(Power.ON),
             )
 
@@ -208,14 +198,12 @@ class WinixFan(WinixEntity, FanEntity):
         # gets dropped by the device.
         if status.mode != Mode.MANUAL:
             await self.coordinator.async_send_command(
-                self._device_id,
                 lambda: client.set_mode(Mode.MANUAL),
                 optimistic_update=_apply_final,
             )
             await asyncio.sleep(COMMAND_DELAY_SECONDS)
 
         await self.coordinator.async_send_command(
-            self._device_id,
             lambda: client.set_airflow(airflow),
             optimistic_update=_apply_final,
         )
