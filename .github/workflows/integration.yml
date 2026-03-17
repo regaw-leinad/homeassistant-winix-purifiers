@@ -1,0 +1,27 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 0" # Sunday at 6am UTC
+
+concurrency:
+  group: integration-tests
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --run-integration
+        env:
+          WINIX_USERNAME: ${{ secrets.WINIX_USERNAME }}
+          WINIX_PASSWORD: ${{ secrets.WINIX_PASSWORD }}
+          WINIX_DEVICE_ID: ${{ secrets.WINIX_DEVICE_ID }}

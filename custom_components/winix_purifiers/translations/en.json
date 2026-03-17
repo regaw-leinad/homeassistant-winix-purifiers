@@ -1,0 +1,67 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Winix Air Purifiers",
+        "description": "Sign in with your Winix app credentials.",
+        "data": {
+          "username": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "Your Winix session has expired. Please re-enter your password for {username}.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication",
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Account is already configured",
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "entity": {
+    "switch": {
+      "plasmawave": {
+        "name": "PlasmaWave"
+      },
+      "child_lock": {
+        "name": "Child lock"
+      }
+    },
+    "sensor": {
+      "air_quality": {
+        "name": "Air quality"
+      },
+      "pm25": {
+        "name": "PM2.5"
+      },
+      "ambient_light": {
+        "name": "Ambient light"
+      },
+      "filter_life": {
+        "name": "Filter life"
+      }
+    },
+    "binary_sensor": {
+      "filter_replacement": {
+        "name": "Filter replacement"
+      }
+    },
+    "select": {
+      "display_brightness": {
+        "name": "Display brightness"
+      },
+      "timer": {
+        "name": "Timer"
+      }
+    }
+  }
+}

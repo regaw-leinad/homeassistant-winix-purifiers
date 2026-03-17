@@ -1,0 +1,44 @@
+[project]
+name = "winix-purifiers"
+version = "1.0.0"
+description = "Winix Air Purifiers integration for Home Assistant"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+authors = [
+    { name = "Dan Wager", email = "danielwager@gmail.com" },
+]
+dependencies = [
+    "warrant-lite==1.0.4",
+    "boto3==1.35.81",
+    "python-jose[cryptography]==3.3.0",
+    "cryptography>=43.0.0",
+    "aiohttp>=3.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "pytest-aiohttp==1.0.5",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "homeassistant==2026.3.2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

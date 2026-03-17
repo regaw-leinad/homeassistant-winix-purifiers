@@ -1,0 +1,23 @@
+{
+  "entity": {
+    "switch": {
+      "plasmawave": {
+        "default": "mdi:creation"
+      }
+    },
+    "sensor": {
+      "filter_life": {
+        "default": "mdi:air-filter"
+      }
+    },
+    "binary_sensor": {
+      "filter_replacement": {
+        "default": "mdi:air-filter",
+        "state": {
+          "on": "mdi:alert-circle",
+          "off": "mdi:air-filter"
+        }
+      }
+    }
+  }
+}
