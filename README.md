@@ -21,15 +21,31 @@
 
 ## Device Support
 
-This integration supports the following Winix air purifiers:
+This integration supports Winix air purifiers. Features are automatically detected from each device's reported attributes, so any model should work out of the box.
 
-| Model | Fan | PlasmaWave | AQI | PM2.5 | Ambient Light | Brightness | Child Lock | Timer |
-|-------|-----|------------|-----|-------|---------------|------------|------------|-------|
-| C545  | Yes | Yes        | Yes | -     | Yes           | -          | -          | -     |
-| C610  | Yes | Yes        | Yes | -     | -             | Yes        | Yes        | -     |
-| Tower XQ | Yes | Yes     | Yes (4-level) | Yes | -      | -          | Yes        | Yes   |
+Known models and their features:
 
-Other models may work but are not officially tested. The integration detects available features from the device's status response, so unsupported attributes are simply not exposed.
+| Model | PlasmaWave | Brightness | Child Lock | Timer | Pollution Lamp | UV |
+|-------|------------|------------|------------|-------|----------------|----|
+| C545 | Yes | - | - | - | - | - |
+| C610 | Yes | Yes | Yes | - | - | - |
+| C909 | Yes | - | - | - | - | - |
+| 5510 / 5520 | Yes | - | - | - | - | - |
+| 9800 | Yes | - | - | - | - | - |
+| AM90 | Yes | - | - | - | - | - |
+| T500 | Yes | - | - | - | - | - |
+| T810 / T830 | Yes | Yes | - | - | - | - |
+| T1000 | - | - | Yes | - | - | - |
+| Tower XQ / XQ PRO | Yes | - | Yes | Yes | Yes | - |
+| HR1000 | Yes | - | Yes | Yes | Yes | - |
+| NK105 | Yes | - | - | - | Yes | - |
+| T1 | Yes | - | - | Yes | - | - |
+| ZERO+ | Yes | - | Yes | Yes | - | - |
+| TITAN | Yes | - | - | Yes | - | - |
+| XLC | Yes | - | - | - | - | - |
+| MASTER(S) | - | - | Yes | Yes | - | - |
+
+All models also support: power, mode (auto/manual), fan speed, AQI, and filter life tracking.
 
 ## Installation
 
