@@ -26,10 +26,10 @@ async def async_setup_entry(
     for device_id in coordinator.get_device_ids():
         device_data = coordinator.get_device_data(device_id)
 
-        # PlasmaWave — always available on all models
+        # PlasmaWave - always available on all models
         entities.append(WinixPlasmawaveSwitch(coordinator, device_id))
 
-        # Child lock — model-dependent
+        # Child lock - model-dependent
         if device_data.capabilities.has_child_lock:
             entities.append(WinixChildLockSwitch(coordinator, device_id))
 

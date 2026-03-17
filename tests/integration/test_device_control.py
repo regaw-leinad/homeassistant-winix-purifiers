@@ -1,4 +1,4 @@
-"""Integration tests for device control — hits real Winix API."""
+"""Integration tests for device control, hits real Winix API."""
 
 from __future__ import annotations
 

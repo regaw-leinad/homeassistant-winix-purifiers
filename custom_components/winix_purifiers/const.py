@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__package__)
 
 DEFAULT_SCAN_INTERVAL = 30  # seconds
 
-# Fan speed mapping (Sleep is excluded — it's a preset, not a speed level)
+# Fan speed mapping (4 manual speeds, Sleep is a preset)
 ORDERED_AIRFLOW_SPEEDS = [Airflow.LOW, Airflow.MEDIUM, Airflow.HIGH, Airflow.TURBO]
 
 # Fan preset modes

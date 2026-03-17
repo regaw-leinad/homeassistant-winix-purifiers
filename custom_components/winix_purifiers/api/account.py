@@ -1,4 +1,4 @@
-"""Winix account management — device listing and token lifecycle."""
+"""Winix account management, device listing and token lifecycle."""
 
 from __future__ import annotations
 

@@ -9,6 +9,7 @@ from custom_components.winix_purifiers.api.device import Airflow
 from custom_components.winix_purifiers.const import (
     ORDERED_AIRFLOW_SPEEDS,
     PRESET_AUTO,
+    PRESET_MODES,
     PRESET_SLEEP,
 )
 
@@ -58,6 +59,9 @@ class TestPercentageToAirflow:
 
 class TestPresetModes:
     """Test preset mode constants."""
+
+    def test_presets(self):
+        assert PRESET_MODES == ["Auto", "Sleep"]
 
     def test_preset_auto(self):
         assert PRESET_AUTO == "Auto"

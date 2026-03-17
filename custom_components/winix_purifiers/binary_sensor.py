@@ -30,7 +30,7 @@ async def async_setup_entry(
 
 
 class WinixFilterReplacementSensor(WinixEntity, BinarySensorEntity):
-    """Filter replacement alert — on when filter life is below threshold."""
+    """Filter replacement alert, on when filter life is below threshold."""
 
     _attr_translation_key = "filter_replacement"
     _attr_device_class = BinarySensorDeviceClass.PROBLEM

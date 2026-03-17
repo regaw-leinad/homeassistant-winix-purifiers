@@ -1,4 +1,4 @@
-"""Winix API library — pure Python, no Home Assistant dependencies."""
+"""Winix API client library."""
 
 from .account import WinixAccount
 from .auth import WinixAuth, WinixAuthResponse

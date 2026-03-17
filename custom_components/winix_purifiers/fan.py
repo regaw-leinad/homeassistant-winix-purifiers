@@ -61,7 +61,7 @@ class WinixFan(WinixEntity, FanEntity):
 
     @property
     def name(self) -> str | None:
-        # Primary entity — uses the device name
+        # Primary entity uses the device name
         return None
 
     @property
@@ -75,8 +75,14 @@ class WinixFan(WinixEntity, FanEntity):
         if status.power == Power.OFF:
             return 0
 
-        if status.airflow == Airflow.SLEEP:
+        # In Sleep preset, hide the slider
+        if status.mode == Mode.MANUAL and status.airflow == Airflow.SLEEP:
             return None
+
+        # In Auto mode, the device may pick sleep-level airflow when
+        # air quality is good - show it as the lowest visible speed
+        if status.airflow == Airflow.SLEEP:
+            return ordered_list_item_to_percentage(ORDERED_AIRFLOW_SPEEDS, Airflow.LOW)
 
         return ordered_list_item_to_percentage(ORDERED_AIRFLOW_SPEEDS, status.airflow)
 
@@ -110,7 +116,6 @@ class WinixFan(WinixEntity, FanEntity):
             await self.async_set_percentage(percentage)
             return
 
-        # Just turn on
         client = self._device_data.client
 
         await self.coordinator.async_send_command(
@@ -191,7 +196,7 @@ class WinixFan(WinixEntity, FanEntity):
             s.mode = Mode.MANUAL
             s.airflow = airflow
 
-        # Ensure device is on (no optimistic update — we'll push final state at the end)
+        # Ensure device is on
         if status.power == Power.OFF:
             await self.coordinator.async_send_command(
                 self._device_id,
@@ -205,7 +210,6 @@ class WinixFan(WinixEntity, FanEntity):
             await self.coordinator.async_send_command(
                 self._device_id,
                 lambda: client.set_mode(Mode.MANUAL),
-                # Push the final state now so the UI shows the target speed immediately
                 optimistic_update=_apply_final,
             )
             await asyncio.sleep(COMMAND_DELAY_SECONDS)

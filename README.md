@@ -3,7 +3,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange?style=for-the-badge)](https://hacs.xyz)
 [![GitHub Release](https://img.shields.io/github/v/release/regaw-leinad/homeassistant-winix-purifiers?style=for-the-badge)](https://github.com/regaw-leinad/homeassistant-winix-purifiers/releases)
 
-[Home Assistant](https://www.home-assistant.io) custom integration for [Winix](https://www.winixamerica.com) air purifiers.
+[Home Assistant](https://www.home-assistant.io) custom integration for [Winix](https://www.winixamerica.com) air purifiers, built by the maintainer of [homebridge-winix-purifiers](https://github.com/regaw-leinad/homebridge-winix-purifiers) and [winix-api](https://github.com/regaw-leinad/winix-api).
 
 ## Features
 
