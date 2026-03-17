@@ -51,6 +51,7 @@ class WinixDeviceClient:
             air_quality=self._parse_air_quality(attrs),
             plasmawave=Plasmawave(attrs.get(Attribute.PLASMAWAVE, Plasmawave.OFF)),
             filter_hours=self._parse_int(attrs.get(Attribute.FILTER_HOURS), 0),
+            air_qvalue=self._parse_int_optional(attrs.get(Attribute.AIR_QVALUE)),
             ambient_light=self._parse_int_optional(attrs.get(Attribute.AMBIENT_LIGHT)),
             pm25=self._parse_int_optional(attrs.get(Attribute.PM25)),
             timer=self._parse_int_optional(attrs.get(Attribute.TIMER)),

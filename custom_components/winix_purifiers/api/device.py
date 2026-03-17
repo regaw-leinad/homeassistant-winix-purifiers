@@ -20,6 +20,7 @@ class Attribute(StrEnum):
     FILTER_HOURS = "A21"
     PM25 = "S04"
     AIR_QUALITY = "S07"
+    AIR_QVALUE = "S08"
     AMBIENT_LIGHT = "S14"
 
 
@@ -63,6 +64,7 @@ class DeviceStatus:
     air_quality: AirQuality
     plasmawave: Plasmawave
     filter_hours: int
+    air_qvalue: int | None = None
     # Model-dependent fields
     ambient_light: int | None = None
     pm25: int | None = None

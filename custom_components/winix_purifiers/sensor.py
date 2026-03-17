@@ -17,8 +17,9 @@ from .const import DOMAIN, MAX_FILTER_HOURS
 from .coordinator import WinixDeviceCoordinator
 from .entity import WinixEntity
 
-# Map Winix AQI enum to approximate EPA AQI values
-_AQI_MAP = {
+# Fallback AQI values when the device doesn't report a raw qvalue (S08).
+# Maps the discrete A05/S07 level to an approximate EPA AQI value.
+_AQI_FALLBACK = {
     AirQuality.GOOD: 25,
     AirQuality.FAIR: 75,
     AirQuality.POOR: 150,
@@ -52,7 +53,12 @@ async def async_setup_entry(
 
 
 class WinixAirQualitySensor(WinixEntity, SensorEntity):
-    """Air quality index sensor."""
+    """Air quality index sensor.
+
+    Uses the raw qvalue (S08) when available since it provides a real
+    numeric reading. Falls back to a mapped value from the discrete
+    AQI level (A05/S07) for devices that don't report S08.
+    """
 
     _attr_translation_key = "air_quality"
     _attr_device_class = SensorDeviceClass.AQI
@@ -65,7 +71,11 @@ class WinixAirQualitySensor(WinixEntity, SensorEntity):
 
     @property
     def native_value(self) -> int | None:
-        return _AQI_MAP.get(self.device_data.status.air_quality)
+        status = self.device_data.status
+        # Prefer the raw qvalue when available
+        if status.air_qvalue is not None:
+            return status.air_qvalue
+        return _AQI_FALLBACK.get(status.air_quality)
 
 
 class WinixPM25Sensor(WinixEntity, SensorEntity):

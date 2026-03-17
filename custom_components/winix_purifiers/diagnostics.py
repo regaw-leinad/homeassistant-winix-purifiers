@@ -47,6 +47,7 @@ async def async_get_config_entry_diagnostics(
                 "mode": device_data.status.mode,
                 "airflow": device_data.status.airflow,
                 "air_quality": device_data.status.air_quality,
+                "air_qvalue": device_data.status.air_qvalue,
                 "plasmawave": device_data.status.plasmawave,
                 "filter_hours": device_data.status.filter_hours,
                 "ambient_light": device_data.status.ambient_light,
