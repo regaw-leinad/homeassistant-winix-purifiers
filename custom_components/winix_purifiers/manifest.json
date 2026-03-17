@@ -4,7 +4,7 @@
   "integration_type": "hub",
   "config_flow": true,
   "iot_class": "cloud_polling",
-  "version": "2026.3.2",
+  "version": "2026.3.3",
   "codeowners": [
     "@regaw-leinad"
   ],
