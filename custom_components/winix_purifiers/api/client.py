@@ -32,9 +32,17 @@ _AIR_QUALITY_VALUES = {
 class WinixDeviceClient:
     """Controls a single Winix device via the unauthenticated IoT API."""
 
-    def __init__(self, session: aiohttp.ClientSession, device_id: str) -> None:
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        device_id: str,
+        identity_id: str,
+    ) -> None:
+        if not identity_id:
+            raise ValueError("WinixDeviceClient requires a non-empty identity_id")
         self._session = session
         self._device_id = device_id
+        self._identity_id = identity_id
 
     @property
     def device_id(self) -> str:
@@ -137,6 +145,7 @@ class WinixDeviceClient:
         """Send a control command to the device."""
         url = URL_DEVICE_CONTROL.format(
             device_id=self._device_id,
+            identity_id=self._identity_id,
             attribute=attribute,
             value=value,
         )

@@ -7,6 +7,7 @@ import asyncio
 import aiohttp
 import pytest
 
+from custom_components.winix_purifiers.api.account import WinixAccount
 from custom_components.winix_purifiers.api.client import WinixDeviceClient
 from custom_components.winix_purifiers.api.device import Airflow, Mode, Power
 
@@ -23,27 +24,40 @@ async def settle():
     await asyncio.sleep(SETTLE_SECONDS)
 
 
+async def _make_client(
+    session: aiohttp.ClientSession,
+    username: str,
+    password: str,
+    device_id: str,
+) -> WinixDeviceClient:
+    """Log in and build a WinixDeviceClient with a resolved identity id."""
+    account = await WinixAccount.from_credentials(session, username, password)
+    return WinixDeviceClient(session, device_id, account.identity_id)
+
+
 class TestDeviceControl:
     """Test real device control operations."""
 
-    async def test_get_status(self, winix_device_id: str):
-        if not winix_device_id:
-            pytest.skip("WINIX_DEVICE_ID required")
+    async def test_get_status(self, winix_username: str, winix_password: str, winix_device_id: str):
+        if not winix_username or not winix_password or not winix_device_id:
+            pytest.skip("WINIX_USERNAME, WINIX_PASSWORD, and WINIX_DEVICE_ID required")
 
         async with aiohttp.ClientSession() as session:
-            client = WinixDeviceClient(session, winix_device_id)
+            client = await _make_client(session, winix_username, winix_password, winix_device_id)
             status = await client.get_status()
 
             assert status.power in (Power.ON, Power.OFF)
             assert status.mode in (Mode.AUTO, Mode.MANUAL)
             assert status.airflow in tuple(Airflow)
 
-    async def test_power_cycle(self, winix_device_id: str):
-        if not winix_device_id:
-            pytest.skip("WINIX_DEVICE_ID required")
+    async def test_power_cycle(
+        self, winix_username: str, winix_password: str, winix_device_id: str
+    ):
+        if not winix_username or not winix_password or not winix_device_id:
+            pytest.skip("WINIX_USERNAME, WINIX_PASSWORD, and WINIX_DEVICE_ID required")
 
         async with aiohttp.ClientSession() as session:
-            client = WinixDeviceClient(session, winix_device_id)
+            client = await _make_client(session, winix_username, winix_password, winix_device_id)
 
             # Save original state
             original = await client.get_status()
@@ -64,12 +78,14 @@ class TestDeviceControl:
             await client.set_power(original.power)
             await settle()
 
-    async def test_mode_and_airflow(self, winix_device_id: str):
-        if not winix_device_id:
-            pytest.skip("WINIX_DEVICE_ID required")
+    async def test_mode_and_airflow(
+        self, winix_username: str, winix_password: str, winix_device_id: str
+    ):
+        if not winix_username or not winix_password or not winix_device_id:
+            pytest.skip("WINIX_USERNAME, WINIX_PASSWORD, and WINIX_DEVICE_ID required")
 
         async with aiohttp.ClientSession() as session:
-            client = WinixDeviceClient(session, winix_device_id)
+            client = await _make_client(session, winix_username, winix_password, winix_device_id)
 
             # Save original state
             original = await client.get_status()

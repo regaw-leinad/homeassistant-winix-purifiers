@@ -14,7 +14,6 @@ from warrant_lite import WarrantLite
 
 from .const import (
     COGNITO_APP_CLIENT_ID,
-    COGNITO_CLIENT_SECRET_KEY,
     COGNITO_REGION,
     COGNITO_USER_POOL_ID,
 )
@@ -31,6 +30,7 @@ class WinixAuthResponse:
 
     user_id: str
     access_token: str
+    id_token: str
     expires_at: float  # Unix timestamp (seconds)
     refresh_token: str
 
@@ -83,11 +83,6 @@ class WinixAuth:
                 AuthFlow="REFRESH_TOKEN",
                 AuthParameters={
                     "REFRESH_TOKEN": refresh_token,
-                    "SECRET_HASH": WarrantLite.get_secret_hash(
-                        user_id,
-                        COGNITO_APP_CLIENT_ID,
-                        COGNITO_CLIENT_SECRET_KEY,
-                    ),
                 },
             )
         except client.exceptions.NotAuthorizedException as err:
@@ -99,6 +94,7 @@ class WinixAuth:
         return WinixAuthResponse(
             user_id=user_id,
             access_token=result["AccessToken"],
+            id_token=result["IdToken"],
             expires_at=time.time() + expires_in,
             refresh_token=refresh_token,
         )
@@ -111,7 +107,7 @@ class WinixAuth:
             password=password,
             pool_id=COGNITO_USER_POOL_ID,
             client_id=COGNITO_APP_CLIENT_ID,
-            client_secret=COGNITO_CLIENT_SECRET_KEY,
+            client_secret=None,
             client=boto3.client(
                 "cognito-idp",
                 region_name=COGNITO_REGION,
@@ -130,6 +126,7 @@ class WinixAuth:
         return WinixAuthResponse(
             user_id=user_id,
             access_token=auth_result["AccessToken"],
+            id_token=auth_result["IdToken"],
             expires_at=time.time() + expires_in,
             refresh_token=auth_result["RefreshToken"],
         )
