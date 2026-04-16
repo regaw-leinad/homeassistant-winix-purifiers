@@ -5,6 +5,16 @@
 
 [Home Assistant](https://www.home-assistant.io) custom integration for [Winix](https://www.winixamerica.com) air purifiers, built by the maintainer of [homebridge-winix-purifiers](https://github.com/regaw-leinad/homebridge-winix-purifiers) and [winix-api](https://github.com/regaw-leinad/winix-api).
 
+## Table of Contents
+
+* [Features](#features)
+* [Device Support](#device-support)
+* [Installation](#installation)
+* [Setup](#setup)
+* [Entities](#entities)
+* [FAQ](#faq)
+* [Acknowledgments](#acknowledgments)
+
 ## Features
 
 - **Dynamic Device Discovery**: Automatically discovers all Winix purifiers linked to your account.
@@ -14,12 +24,13 @@
 - **PM2.5 Sensor**: Real-time particulate matter readings on supported models.
 - **Ambient Light Sensor**: Light level reporting on supported models.
 - **Filter Life Tracking**: Filter life percentage with a replacement alert when it's time to change the filter.
-- **Model-Specific Features**: Brightness control (C610+), child lock (C610+), power-off timer (Tower XQ).
+- **Model-Specific Features**: Brightness control, child lock, power-off timer, pollution lamp, and UV sterilization.
 - **Optimistic Updates**: UI reflects changes immediately without waiting for the next poll cycle.
 - **Encrypted API Communication**: AES-256-CBC encryption for all sensitive API calls.
 - **Automatic Token Refresh**: Seamlessly refreshes authentication in the background.
 
-## Device Support
+<details>
+<summary><h3>Device Support</h3></summary>
 
 This integration supports Winix air purifiers. Features are automatically detected from each device's reported attributes, so any model should work out of the box.
 
@@ -27,6 +38,7 @@ Known models and their features:
 
 | Model | PlasmaWave | Brightness | Child Lock | Timer | Pollution Lamp |
 |-------|------------|------------|------------|-------|----------------|
+| C5 | Yes | - | - | - | - |
 | C545 | Yes | - | - | - | - |
 | C610 | Yes | Yes | Yes | - | - |
 | C909 | Yes | - | - | - | - |
@@ -34,12 +46,18 @@ Known models and their features:
 | 9800 | Yes | - | - | - | - |
 | AM90 | Yes | - | - | - | - |
 | T500 | Yes | - | - | - | - |
+| T800 | Yes | Yes | - | - | - |
 | T810 / T830 | Yes | Yes | - | - | - |
 | T1000 | - | - | Yes | - | - |
+| Tower Q | Yes | - | - | - | - |
+| Tower Prime | - | - | - | - | - |
+| Tower Prime+ | - | - | Yes | - | - |
 | Tower XQ / XQ PRO | Yes | - | Yes | Yes | Yes |
 | HR1000 | Yes | - | Yes | Yes | Yes |
 | NK105 | Yes | - | - | - | Yes |
 | T1 | Yes | - | - | Yes | - |
+| WXAP800 | Yes | Yes | - | - | - |
+| ZERO 360 | Yes | Yes | - | - | - |
 | ZERO+ | Yes | - | Yes | Yes | - |
 | TITAN | Yes | - | - | Yes | - |
 | XLC | Yes | - | - | - | - |
@@ -47,9 +65,9 @@ Known models and their features:
 
 All models also support: power, mode (auto/manual), fan speed, AQI, and filter life tracking.
 
-Additional models (T800, WXAP800, ZERO 360, ZERO+, and others) are also supported. All features are detected automatically from the device, so even models not listed here should work.
+All features are detected automatically from the device, so even models not listed here should work. Some models also report ambient light, PM2.5 density, filter door status, and filter presence detection. These sensors are automatically created when the device reports them.
 
-Some models also report ambient light, PM2.5 density, filter door status, and filter presence detection. These sensors are automatically created when the device reports them.
+</details>
 
 ## Installation
 
@@ -74,11 +92,8 @@ Some models also report ambient light, PM2.5 density, filter door status, and fi
 3. Enter your Winix app email and password.
 4. Your devices will be automatically discovered.
 
-### Alternate Winix Account
-
-Winix's system limits users to a single active session per account. If the same account is used on both the Winix app and Home Assistant, you may get logged out of one. To avoid this, create a second Winix account and share your devices to it via the Winix app.
-
-## Entities
+<details>
+<summary><h3>Entities</h3></summary>
 
 Each purifier exposes the following entities:
 
@@ -89,16 +104,44 @@ Each purifier exposes the following entities:
 ### Sensors
 - **Air Quality**: AQI index value (25 = Good, 75 = Fair, 150 = Poor, 200 = Very Poor)
 - **Ambient Light**: Illuminance in lux (model-dependent)
-- **PM2.5**: Particulate matter in ug/m3 (model-dependent)
+- **PM2.5**: Particulate matter in µg/m³ (model-dependent)
 
 ### Diagnostics
 - **Filter Life**: Remaining filter life percentage
-- **Filter Replacement**: Problem indicator when filter life is below 10%
+- **Filter Replacement**: Problem indicator when filter life is below threshold
+- **Filter Door**: Door open/closed status (model-dependent)
+- **Filter Missing**: Alert when filter is not detected (model-dependent)
 
 ### Configuration (model-dependent)
-- **Display Brightness**: Off, Low, Medium, High (C610+)
-- **Child Lock**: On/off (C610+)
-- **Timer**: Power-off timer (Tower XQ)
+- **Display Brightness**: Off, Low, Medium, High
+- **Child Lock**: On/off
+- **Timer**: Power-off timer (Off, 1h, 2h, 4h, 8h, 12h)
+- **Pollution Lamp**: AQI indicator LED on/off
+- **UV Sterilization**: On/off
+
+</details>
+
+## FAQ
+
+### Do I need a separate Winix account?
+
+**Strongly recommended.** Winix's system limits users to a single active session per account. If the same account is used on both the Winix app and Home Assistant, one session will get logged out, causing frequent authentication disruptions.
+
+_**Yes, this is an annoying and tedious one-time setup, but it is well worth not having to continually fix authentication issues.**_
+
+To set this up:
+
+1. Create a new Winix account (use a different email).
+2. In the Winix app, share your devices from your primary account to the new account.
+3. Use the new account credentials when setting up this integration.
+
+### My devices aren't responding / showing as unavailable?
+
+This is likely a session conflict. See the [alternate account FAQ](#do-i-need-a-separate-winix-account) above. If you're already using a dedicated account, try removing and re-adding the integration to force a fresh login.
+
+### How often does the integration poll for updates?
+
+By default, every 30 seconds. You can adjust this in the integration's options (**Settings > Devices & Services > Winix Air Purifiers > Configure**). The minimum is 15 seconds. Control commands (power, speed, etc.) use optimistic updates, so the UI reflects changes immediately.
 
 ## Acknowledgments
 
