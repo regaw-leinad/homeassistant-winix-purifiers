@@ -62,10 +62,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         },
     )
 
+    identity_id = account.identity_id
+
     # Create a per-device coordinator for each device
     coordinators: dict[str, WinixDeviceCoordinator] = {}
     for device in devices:
-        client = WinixDeviceClient(session, device.device_id)
+        client = WinixDeviceClient(session, device.device_id, identity_id)
 
         # Initial status fetch to detect model capabilities
         raw_attributes: dict[str, str] = {}

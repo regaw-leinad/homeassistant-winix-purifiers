@@ -8,10 +8,15 @@ import time
 from typing import Any
 
 import aiohttp
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config as BotoConfig
 
 from .auth import WinixAuth, WinixAuthResponse
 from .const import (
-    COGNITO_CLIENT_SECRET_KEY,
+    COGNITO_IDENTITY_POOL_ID,
+    COGNITO_REGION,
+    COGNITO_USER_POOL_ID,
     MOBILE_APP_VERSION,
     MOBILE_LANG,
     MOBILE_MODEL,
@@ -20,6 +25,7 @@ from .const import (
     TOKEN_EXPIRY_BUFFER_SECONDS,
     URL_CHECK_ACCESS_TOKEN,
     URL_GET_DEVICE_INFO_LIST,
+    URL_INIT,
     URL_REGISTER_USER,
     UUID_PREFIX,
     UUID_SUFFIX,
@@ -27,6 +33,8 @@ from .const import (
 from .crypto import decrypt, encrypt
 from .device import WinixDevice
 from .exceptions import WinixApiError
+
+_COGNITO_LOGINS_PROVIDER = f"cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,11 +47,16 @@ class WinixAccount:
         session: aiohttp.ClientSession,
         username: str,
         auth: WinixAuthResponse,
+        *,
+        executor_fn: Any = None,
     ) -> None:
         self._session = session
         self._username = username
         self._auth = auth
         self._uuid = self._generate_uuid(auth.user_id)
+        self._identity_id: str | None = None
+        # Used to run boto3 (sync) calls off the event loop when in HA.
+        self._executor_fn = executor_fn
 
     @classmethod
     async def from_credentials(
@@ -64,7 +77,7 @@ class WinixAccount:
         else:
             auth = WinixAuth.login(username, password)
 
-        return await cls._create(session, username, auth)
+        return await cls._create(session, username, auth, executor_fn=login_fn)
 
     @classmethod
     async def from_existing_auth(
@@ -85,7 +98,7 @@ class WinixAccount:
         else:
             auth = WinixAuth.refresh(refresh_token, user_id)
 
-        return await cls._create(session, username, auth)
+        return await cls._create(session, username, auth, executor_fn=refresh_fn)
 
     @classmethod
     async def _create(
@@ -93,11 +106,12 @@ class WinixAccount:
         session: aiohttp.ClientSession,
         username: str,
         auth: WinixAuthResponse,
+        *,
+        executor_fn: Any = None,
     ) -> WinixAccount:
-        """Create account instance and register with Winix backend."""
-        account = cls(session, username, auth)
-        await account._register_user()
-        await account._check_access_token()
+        """Create account instance and run the Winix mobile handshake."""
+        account = cls(session, username, auth, executor_fn=executor_fn)
+        await account._establish_session()
         return account
 
     @property
@@ -105,12 +119,21 @@ class WinixAccount:
         """Current auth response (for persisting tokens)."""
         return self._auth
 
+    @property
+    def identity_id(self) -> str:
+        """Cognito Identity Pool identity id for the current user.
+
+        Required to construct a WinixDeviceClient for device control.
+        """
+        if not self._identity_id:
+            raise WinixApiError("identity_id not resolved; account has no active session")
+        return self._identity_id
+
     async def get_devices(self) -> list[WinixDevice]:
         """Fetch the list of devices associated with this account."""
         response = await self._mobile_post(
             URL_GET_DEVICE_INFO_LIST,
             {
-                "cognitoClientSecretKey": COGNITO_CLIENT_SECRET_KEY,
                 "accessToken": await self._get_access_token(),
                 "uuid": self._uuid,
                 "osType": MOBILE_OS_TYPE,
@@ -152,24 +175,69 @@ class WinixAccount:
         return self._auth.expires_at <= (time.time() + TOKEN_EXPIRY_BUFFER_SECONDS)
 
     async def _refresh(self) -> None:
-        """Refresh the access token."""
+        """Refresh the access token and re-establish the mobile session."""
         _LOGGER.debug("account:refresh() token expired, refreshing")
-        self._auth = WinixAuth.refresh(self._auth.refresh_token, self._auth.user_id)
+        self._auth = await self._run_auth(
+            WinixAuth.refresh, self._auth.refresh_token, self._auth.user_id
+        )
         self._uuid = self._generate_uuid(self._auth.user_id)
+        await self._establish_session()
+
+    async def _run_auth(self, fn: Any, *args: Any) -> WinixAuthResponse:
+        """Run a blocking auth function via the executor if provided."""
+        if self._executor_fn:
+            return await self._executor_fn(fn, *args)
+        return fn(*args)
+
+    async def _establish_session(self) -> None:
+        """Run the Winix mobile handshake after a fresh login or token refresh.
+
+        Order is load-bearing as of v1.5.7:
+          1. Resolve Cognito identity id (needed by registerUser/checkAccessToken)
+          2. registerUser
+          3. init
+          4. checkAccessToken
+        """
+        await self._resolve_identity_id()
         await self._register_user()
+        await self._init()
         await self._check_access_token()
+
+    async def _resolve_identity_id(self) -> None:
+        """Resolve the Cognito Identity Pool identity id for the current user.
+
+        Required in mobile API payloads and device control URLs as of v1.5.7.
+        """
+        response = await self._run_auth(self._get_identity_id_sync, self._auth.id_token)
+        identity_id = response.get("IdentityId")
+        if not identity_id:
+            raise WinixApiError("Cognito GetId returned no IdentityId")
+        self._identity_id = identity_id
+
+    @staticmethod
+    def _get_identity_id_sync(id_token: str) -> dict[str, Any]:
+        """Blocking call to Cognito Identity GetId; run via executor."""
+        client = boto3.client(
+            "cognito-identity",
+            region_name=COGNITO_REGION,
+            config=BotoConfig(signature_version=UNSIGNED),
+        )
+        return client.get_id(
+            IdentityPoolId=COGNITO_IDENTITY_POOL_ID,
+            Logins={_COGNITO_LOGINS_PROVIDER: id_token},
+        )
 
     async def _register_user(self) -> None:
         """Register this android UUID with the Winix backend.
 
-        Must be called after getting a cognito token, before checkAccessToken.
+        Must be called after resolving identity_id, before init/checkAccessToken.
         This is how the Winix backend associates our fake android device UUID
         with the user's account.
         """
         await self._mobile_post(
             URL_REGISTER_USER,
             {
-                "cognitoClientSecretKey": COGNITO_CLIENT_SECRET_KEY,
+                "identityId": self._identity_id,
                 "accessToken": self._auth.access_token,
                 "uuid": self._uuid,
                 "email": self._username,
@@ -181,15 +249,25 @@ class WinixAccount:
             },
         )
 
+    async def _init(self) -> None:
+        """Winix mobile API init endpoint. Called after registerUser as of v1.5.7."""
+        await self._mobile_post(
+            URL_INIT,
+            {
+                "accessToken": self._auth.access_token,
+                "uuid": self._uuid,
+                "region": "US",
+            },
+        )
+
     async def _check_access_token(self) -> None:
         """Validate the access token with the Winix backend."""
         await self._mobile_post(
             URL_CHECK_ACCESS_TOKEN,
             {
-                "cognitoClientSecretKey": COGNITO_CLIENT_SECRET_KEY,
+                "identityId": self._identity_id,
                 "accessToken": self._auth.access_token,
                 "uuid": self._uuid,
-                "osType": MOBILE_OS_TYPE,
                 "osVersion": MOBILE_OS_VERSION,
                 "mobileLang": MOBILE_LANG,
                 "appVersion": MOBILE_APP_VERSION,
