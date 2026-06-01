@@ -20,7 +20,6 @@ import aiohttp
 from custom_components.winix_purifiers.api.account import WinixAccount
 from custom_components.winix_purifiers.api.auth import WinixAuth
 from custom_components.winix_purifiers.api.const import (
-    COGNITO_CLIENT_SECRET_KEY,
     MOBILE_APP_VERSION,
     MOBILE_LANG,
     MOBILE_MODEL,
@@ -51,7 +50,6 @@ KNOWN_MODELS_PATH = Path(__file__).parent / "known_models.json"
 async def fetch_model_list(session: aiohttp.ClientSession, access_token: str, uuid: str) -> dict:
     """Fetch the full model list from the Winix API."""
     payload = {
-        "cognitoClientSecretKey": COGNITO_CLIENT_SECRET_KEY,
         "accessToken": access_token,
         "uuid": uuid,
         "osType": MOBILE_OS_TYPE,
